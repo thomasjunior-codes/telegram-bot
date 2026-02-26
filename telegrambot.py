@@ -1,46 +1,59 @@
 import requests
 import os
 
-# Step 1: Get random Wikipedia article
-wiki_url = "https://en.wikipedia.org/api/rest_v1/page/random/summary"
-
 headers = {
-    "User-Agent": "TelegramWikiBot/1.0 (https://github.com/thomasjunior-codes)"
+    "User-Agent": "TelegramWikiBot/1.0"
 }
 
-response = requests.get(wiki_url, headers=headers)
-
-if response.status_code != 200:
-    print("Wikipedia API failed:", response.status_code)
-    exit()
-
-res = response.json()
-
-title = res.get("title", "")
-summary = res.get("extract", "")
-link = res.get("content_urls", {}).get("desktop", {}).get("page", "")
-
-# Step 2: Translate to Tamil (FREE trick)
-translate_url = "https://translate.googleapis.com/translate_a/single"
+# STEP 1: Get random article title first
+random_api = "https://en.wikipedia.org/w/api.php"
 
 params = {
-    "client": "gtx",
-    "sl": "en",
-    "tl": "ta",
-    "dt": "t",
-    "q": summary
+    "action": "query",
+    "format": "json",
+    "list": "random",
+    "rnnamespace": 0,
+    "rnlimit": 1
 }
 
-translation = requests.get(translate_url, params=params).json()
-tamil_summary = translation[0][0][0]
+random_res = requests.get(random_api, params=params, headers=headers).json()
+title = random_res["query"]["random"][0]["title"]
 
-# Optional: Translate title
-params["q"] = title
-title_translation = requests.get(translate_url, params=params).json()
-tamil_title = title_translation[0][0][0]
+# STEP 2: Get FULL extract (not just short summary)
+extract_params = {
+    "action": "query",
+    "format": "json",
+    "prop": "extracts",
+    "explaintext": True,
+    "titles": title
+}
 
-# Step 3: Send to Telegram
-message = f"📚 {tamil_title}\n\n{tamil_summary}\n\n🔗 {link}"
+extract_res = requests.get(random_api, params=extract_params, headers=headers).json()
+
+page = next(iter(extract_res["query"]["pages"].values()))
+full_extract = page.get("extract", "No extract available.")
+
+link = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+
+# STEP 3: Translate to Tamil
+translate_url = "https://translate.googleapis.com/translate_a/single"
+
+def translate_to_tamil(text):
+    params = {
+        "client": "gtx",
+        "sl": "en",
+        "tl": "ta",
+        "dt": "t",
+        "q": text
+    }
+    response = requests.get(translate_url, params=params).json()
+    return response[0][0][0]
+
+tamil_title = translate_to_tamil(title)
+tamil_extract = translate_to_tamil(full_extract[:3000])  # limit length
+
+# STEP 4: Send to Telegram
+message = f"📚 {tamil_title}\n\n{tamil_extract}\n\n🔗 {link}"
 
 bot_token = os.environ['BOT_TOKEN']
 chat_id = os.environ['CHAT_ID']
