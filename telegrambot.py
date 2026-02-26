@@ -1,5 +1,6 @@
 import requests
 import os
+import random
 
 headers = {
     "User-Agent": "TelegramWikiBot/1.0"
@@ -7,30 +8,49 @@ headers = {
 
 wiki_api = "https://en.wikipedia.org/w/api.php"
 
-# STEP 1 — Get random article
-random_params = {
+# STEP 1 — Choose random category
+categories = [
+    "Category:Science",
+    "Category:History",
+    "Category:Physics",
+    "Category:Chemistry",
+    "Category:Biology",
+    "Category:World_history",
+    "Category:Ancient_history",
+    "Category:History_of_science"
+]
+
+chosen_category = random.choice(categories)
+
+# STEP 2 — Get random page from chosen category
+category_params = {
     "action": "query",
     "format": "json",
-    "list": "random",
-    "rnnamespace": 0,
-    "rnlimit": 1
-}
-
-random_res = requests.get(wiki_api, params=random_params, headers=headers).json()
-title = random_res["query"]["random"][0]["title"]
-
-# STEP 2 — Get FULL article content
-extract_params = {
-    "action": "query",
-    "format": "json",
+    "generator": "categorymembers",
+    "gcmtitle": chosen_category,
+    "gcmnamespace": 0,
+    "gcmlimit": 50,
     "prop": "extracts",
-    "explaintext": True,
-    "titles": title
+    "explaintext": True
 }
 
-extract_res = requests.get(wiki_api, params=extract_params, headers=headers).json()
-page = next(iter(extract_res["query"]["pages"].values()))
-extract = page.get("extract", "No content available.")
+response = requests.get(wiki_api, params=category_params, headers=headers).json()
+
+pages = response.get("query", {}).get("pages", {})
+
+if not pages:
+    print("No pages found in category")
+    exit()
+
+page = random.choice(list(pages.values()))
+
+title = page.get("title", "No title")
+extract = page.get("extract", "")
+
+# Skip short articles
+if len(extract) < 1500:
+    print("Article too short, skipping.")
+    exit()
 
 link = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
 
@@ -42,7 +62,7 @@ send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
 MAX_LENGTH = 4000
 
-# Auto split for Telegram limit
+# Split message if long
 for i in range(0, len(message), MAX_LENGTH):
     part = message[i:i+MAX_LENGTH]
     requests.post(send_url, data={
