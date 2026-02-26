@@ -1,13 +1,28 @@
 import requests
 import os
 
-# Get random Wikipedia article
 url = "https://en.wikipedia.org/api/rest_v1/page/random/summary"
-res = requests.get(url).json()
 
-title = res['title']
-summary = res['extract']
-link = res['content_urls']['desktop']['page']
+headers = {
+    "User-Agent": "TelegramWikiBot/1.0 (https://github.com/thomasjunior-codes)"
+}
+
+response = requests.get(url, headers=headers)
+
+if response.status_code != 200:
+    print("Wikipedia API failed:", response.status_code)
+    exit()
+
+try:
+    res = response.json()
+except Exception as e:
+    print("JSON decode failed")
+    print(response.text)
+    exit()
+
+title = res.get("title", "No Title")
+summary = res.get("extract", "No summary available.")
+link = res.get("content_urls", {}).get("desktop", {}).get("page", "")
 
 message = f"📚 {title}\n\n{summary}\n\nRead more: {link}"
 
