@@ -92,8 +92,9 @@ places = [
 
 def get_weather(lat,lon):
     url=f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
-    r=requests.get(url)
+    r=requests.get(url, timeout=15)
     data=r.json()
+    print(data)
     temp=data["current_weather"]["temperature"]
     wind=data["current_weather"]["windspeed"]
     code=data["current_weather"]["weathercode"]
