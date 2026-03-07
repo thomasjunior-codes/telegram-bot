@@ -5,7 +5,7 @@ headers = {
     "User-Agent": "TelegramWikiBot/1.0"
 }
 
-wiki_api = "https://en.wikipedia.org/w/api.php"
+wiki_api = "https://ta.wikipedia.org/w/api.php"
 
 # STEP 1 — Get random article
 random_params = {
