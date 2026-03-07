@@ -32,7 +32,7 @@ extract_res = requests.get(wiki_api, params=extract_params, headers=headers).jso
 page = next(iter(extract_res["query"]["pages"].values()))
 extract = page.get("extract", "No content available.")[:3900]
 
-link = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+link = f"https://ta.wikipedia.org/wiki/{title.replace(' ', '_')}"
 
 message = f"📚 {title}\n\n{extract}\n\n🔗 Read more: {link}"
 
