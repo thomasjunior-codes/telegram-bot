@@ -30,7 +30,7 @@ extract_params = {
 
 extract_res = requests.get(wiki_api, params=extract_params, headers=headers).json()
 page = next(iter(extract_res["query"]["pages"].values()))
-extract = page.get("extract", "No content available.")
+extract = page.get("extract", "No content available.")[:3900]
 
 link = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
 
@@ -40,12 +40,15 @@ bot_token = os.environ['BOT_TOKEN']
 chat_id = os.environ['CHAT_ID']
 send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-MAX_LENGTH = 4000
-
+# Send single message
+requests.post(send_url, data={
+    "chat_id": chat_id,
+    "text": message
+})
 # Auto split for Telegram limit
-for i in range(0, len(message), MAX_LENGTH):
-    part = message[i:i+MAX_LENGTH]
-    requests.post(send_url, data={
-        "chat_id": chat_id,
-        "text": part
-    })
+# for i in range(0, len(message), MAX_LENGTH):
+#     part = message[i:i+MAX_LENGTH]
+#     requests.post(send_url, data={
+#         "chat_id": chat_id,
+#         "text": part
+#     })
